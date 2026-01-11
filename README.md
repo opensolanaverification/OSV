@@ -1,0 +1,74 @@
+# Solana NFT Holder Verification Bot
+
+An open-source, fully async Discord bot that verifies Solana NFT ownership and assigns tiered roles based on holdings using the Helius DAS API.
+
+## Features
+
+- **Wallet Verification**: Secure micro-SOL self-transfer verification (non-custodial).
+- **Role Management**: Automatically assigns roles based on NFT counts in specific collections.
+- **Support for Compressed NFTs**: Uses Helius DAS API to support all NFT standards on Solana.
+- **Background Sync**: Periodically re-checks holdings and updates roles (default: every 15 mins).
+- **Multi-Collection Support**: Track multiple collections with different tier structures.
+
+## Technology Stack
+
+- **Python 3.10+**
+- **discord.py** (Slash Commands)
+- **aiosqlite** (Async Database)
+- **Helius DAS API** (Asset Indexing)
+- **Solana.py / Solders** (Transaction Verification)
+
+## Installation
+
+1.  **Clone the repository**:
+    ```bash
+    git clone <your-repo-url>
+    cd <your-repo-dir>
+    ```
+
+2.  **Install Dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3.  **Configuration**:
+    Create a `.env` file in the root directory:
+    ```env
+    DISCORD_TOKEN=your_discord_bot_token
+    HELIUS_API_KEY=your_helius_api_key
+    
+    # Optional Configuration
+    # DB_PATH=bot_database.db
+    # SOLANA_RPC_URL=https://mainnet.helius-rpc.com/?api-key=...
+    # GUILD_ID=123456789 (Syncs commands to specific guild)
+    ```
+
+## Usage
+s
+1.  **Run the Bot**:
+    ```bash
+    python main.py
+    ```
+
+2.  **Discord Commands**:
+
+    **User Commands**:
+    - `/connect_wallet <address>`: Start verification. 
+    - `/status`: Check your linked wallet.
+    - `/disconnect_wallet`: Unlink your wallet.
+
+    **Admin Commands**:
+    - `/add_collection <address> <name>`: Start tracking a collection.
+    - `/set_tier <collection_address> <min_nfts> <role>`: Assign a role for holding N NFTs.
+
+## Architecture
+
+- `src/bot.py`: Main Discord bot instance and command handlers.
+- `src/role_engine.py`: Logic for determining user roles.
+- `src/helius_client.py`: Async client for Helius Digital Asset Standard (DAS) API.
+- `src/solana_verifier.py`: Verification of on-chain self-transfer transactions.
+- `src/tasks.py`: Background tasks for role synchronization.
+
+## License
+
+MIT
