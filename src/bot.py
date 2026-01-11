@@ -158,7 +158,7 @@ async def update_roles_for_user(member: discord.Member, wallet_address: str):
     
     if to_add:
         try:
-            await member.add_roles(*to_add, reason="Solana NFT Verification")
+            await member.add_roles(*to_add, reason="Open Solana Verification")
         except Exception as e:
             logger.error(f"Failed to add roles: {e}")
 

@@ -1,4 +1,4 @@
-# Solana NFT Holder Verification Bot
+# Open Solana Verification
 
 An open-source, fully async Discord bot that verifies Solana NFT ownership and assigns tiered roles based on holdings using the Helius DAS API.
 
