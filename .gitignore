@@ -1,3 +1,6 @@
 .env
+
 myenv
 venv
+
+bot_database.db

@@ -44,8 +44,6 @@ An open-source, fully async Discord bot that verifies Solana NFT ownership and a
     HELIUS_RPC_URL=https://mainnet.helius-rpc.com/?api-key=your_api_key
     
     # Optional Configuration
-    # DB_PATH=bot_database.db
-    # SOLANA_RPC_URL=https://mainnet.helius-rpc.com/?api-key=...
     # GUILD_ID=123456789 (Syncs commands to specific guild)
     ```
 
@@ -59,13 +57,21 @@ An open-source, fully async Discord bot that verifies Solana NFT ownership and a
 2.  **Discord Commands**:
 
     **User Commands**:
-    - `/connect_wallet <address>`: Start verification. 
-    - `/status`: Check your linked wallet.
-    - `/disconnect_wallet`: Unlink your wallet.
+    - `/connect_wallet <address>`: Start the wallet verification process.
+    - `/my_wallet`: View your linked Solana wallet or manage your connection.
 
     **Admin Commands**:
     - `/add_collection <address> <name>`: Start tracking a collection.
     - `/set_tier <collection_address> <min_nfts> <role>`: Assign a role for holding N NFTs.
+
+## Maintenance
+
+### Syncing Commands
+Slash commands (the ones starting with `/`) do not sync automatically on startup to improve performance and avoid duplicates. Admins must manually sync them when changes are made:
+
+- **Command**: `!sync`
+- **Permissions**: Required **Bot Owner** permissions.
+- **Sync Speed**: If `GUILD_ID` is set in `.env`, the sync is **instant**. Global sync (no `GUILD_ID`) can take up to 1 hour to propagate.
 
 ## Architecture
 
