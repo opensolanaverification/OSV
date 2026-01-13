@@ -1,6 +1,5 @@
 import logging
-import asyncio
-from typing import List, Set, Tuple, Optional
+from typing import Set, Tuple, Optional
 from .db import Database
 from .helius_client import HeliusClient
 

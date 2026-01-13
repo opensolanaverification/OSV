@@ -1,8 +1,7 @@
-import discord
 from discord.ext import tasks, commands
 import logging
 import aiosqlite
-from .bot import bot, update_roles_for_user, apply_role_changes
+from .bot import bot, apply_role_changes
 
 logger = logging.getLogger(__name__)
 

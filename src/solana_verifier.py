@@ -1,7 +1,5 @@
 import logging
-import time
 from solana.rpc.async_api import AsyncClient
-from solders.pubkey import Pubkey
 from solders.signature import Signature
 from .config import SOLANA_RPC_URL
 
