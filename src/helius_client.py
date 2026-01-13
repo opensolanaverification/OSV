@@ -97,3 +97,25 @@ class HeliusClient:
             
         return all_assets
 
+    async def get_all_assets_by_group(self, collection_address: str):
+        """
+        Fetches all assets for a given collection (group), handling pagination.
+        """
+        all_assets = []
+        page = 1
+        limit = 1000
+        
+        while True:
+            assets = await self.get_assets_by_group(collection_address, page, limit)
+            if not assets:
+                break
+            
+            all_assets.extend(assets)
+            
+            if len(assets) < limit:
+                break
+                
+            page += 1
+            await asyncio.sleep(HELIUS_RATE_LIMIT_DELAY) # Rate limiting
+            
+        return all_assets

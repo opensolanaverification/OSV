@@ -4,7 +4,7 @@ from discord.ext import commands
 import logging
 import random
 import time
-from typing import Optional
+from typing import Optional, Set, Tuple
 
 from .config import GUILD_ID, VERIFICATION_AMOUNT_MIN, VERIFICATION_AMOUNT_MAX, VERIFICATION_EXPIRY_SECONDS
 from .db import Database
@@ -250,7 +250,9 @@ async def collection_autocomplete(
 
 async def update_roles_for_user(member: discord.Member, wallet_address: Optional[str]):
     roles_to_add_ids, roles_to_remove_ids = await bot.role_engine.calculate_roles(wallet_address)
-    
+    await apply_role_changes(member, roles_to_add_ids, roles_to_remove_ids)
+
+async def apply_role_changes(member: discord.Member, roles_to_add_ids: Set[int], roles_to_remove_ids: Set[int]):
     current_role_ids = {r.id for r in member.roles}
     
     # Add

@@ -11,56 +11,81 @@ class RoleEngine:
         self.db = db
         self.helius = helius
 
+    async def get_global_holdings(self) -> dict:
+        """
+        Fetches all assets for all tracked collections and builds a global holdings map.
+        Returns: {wallet_address: {collection_address: count}}
+        """
+        collections = await self.db.get_all_collections()
+        global_holdings = {} # wallet_address -> {collection_address: count}
+        
+        for coll_row in collections:
+            coll_addr = coll_row[0]
+            logger.info(f"Fetching all assets for collection: {coll_addr}")
+            assets = await self.helius.get_all_assets_by_group(coll_addr)
+            
+            for asset in assets:
+                owner = asset.get("ownership", {}).get("owner")
+                if not owner:
+                    continue
+                
+                if owner not in global_holdings:
+                    global_holdings[owner] = {}
+                
+                global_holdings[owner][coll_addr] = global_holdings[owner].get(coll_addr, 0) + 1
+                
+        return global_holdings
+
     async def calculate_roles(self, wallet_address: Optional[str]) -> Tuple[Set[int], Set[int]]:
         """
         Calculates which roles should be added and removed for a specific wallet.
-        Returns: (roles_to_add, roles_to_remove)
+        Used for instant verification / !test command.
         """
-        # 1. Fetch all tracked collections
         collections = await self.db.get_all_collections()
         if not collections:
             return set(), set()
         
-        # 2. Fetch all assets for the user
         if wallet_address:
             assets = await self.helius.get_all_assets_by_owner(wallet_address)
         else:
             assets = []
         
-        # 3. Group assets by collection
-        holdings = {} # collection_address -> count
+        holdings = {}
         for asset in assets:
             grouping = asset.get("grouping", [])
             for group in grouping:
                 if group.get("group_key") == "collection":
-                    coll_addr = group.get("group_value")
-                    holdings[coll_addr] = holdings.get(coll_addr, 0) + 1
+                    addr = group.get("group_value")
+                    holdings[addr] = holdings.get(addr, 0) + 1
         
-        # 4. Determine roles per collection
-        roles_to_add = set()
-        roles_to_keep = set() # Roles that the user qualifies for
-        all_tracked_roles = set() # All roles managed by the bot
+        return await self.calculate_roles_from_holdings(holdings, collections)
 
-        for collection_row in collections:
-            collection_address = collection_row[0]
-            tiers = await self.db.get_tiers(collection_address) # Ordered by min_amount DESC
+    async def calculate_roles_from_holdings(self, user_holdings: dict, all_collections: list) -> Tuple[Set[int], Set[int]]:
+        """
+        Core logic to match holdings against tiers.
+        user_holdings: {collection_address: count}
+        all_collections: list of collection rows from DB
+        """
+        roles_to_add = set()
+        roles_to_keep = set()
+        all_managed_roles = set()
+
+        for coll_row in all_collections:
+            coll_addr = coll_row[0]
+            tiers = await self.db.get_tiers(coll_addr)
             
-            user_count = holdings.get(collection_address, 0)
+            user_count = user_holdings.get(coll_addr, 0)
             
-            # Find the highest tier the user qualifies for (highest only)
             found_highest = False
             for tier in tiers:
-                # tier: (id, collection, min_amount, role_id)
                 min_amount = tier[2]
                 role_id = tier[3]
-                all_tracked_roles.add(role_id)
+                all_managed_roles.add(role_id)
                 
                 if not found_highest and user_count >= min_amount:
                     roles_to_add.add(role_id)
                     roles_to_keep.add(role_id)
                     found_highest = True
                 
-        # 5. Roles to remove = All tracked roles - roles to keep
-        roles_to_remove = all_tracked_roles - roles_to_keep
-        
+        roles_to_remove = all_managed_roles - roles_to_keep
         return roles_to_add, roles_to_remove
