@@ -44,7 +44,7 @@ An open-source, fully async Discord bot that verifies Solana NFT ownership and a
     ```
 
 ## Usage
-s
+
 1.  **Run the Bot**:
     ```bash
     python main.py
