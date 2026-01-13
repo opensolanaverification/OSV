@@ -109,6 +109,11 @@ class Database:
             async with db.execute("SELECT * FROM collections") as cursor:
                 return await cursor.fetchall()
 
+    async def get_collection(self, address: str):
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("SELECT * FROM collections WHERE collection_address = ?", (address,)) as cursor:
+                return await cursor.fetchone()
+
     async def add_tier(self, collection: str, min_amount: int, role_id: int):
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(

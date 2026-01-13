@@ -16,8 +16,7 @@ logger = logging.getLogger(__name__)
 
 class NFTVerificationBot(commands.Bot):
     def __init__(self):
-        intents = discord.Intents.default()
-        intents.members = True
+        intents = discord.Intents.all()  # Required for !prefix commands to work
         super().__init__(command_prefix="!", intents=intents)
         
         self.db = Database()
@@ -52,6 +51,24 @@ async def sync(ctx):
             await ctx.send(f"Successfully synced {len(synced)} commands globally. (Note: Global sync can take up to 1 hour to propagate)")
     except Exception as e:
         await ctx.send(f"Failed to sync: {e}")
+
+@bot.command()
+@commands.is_owner()
+@commands.guild_only()
+async def test(ctx, wallet_address: str):
+    """Force connect a wallet to yourself without verification (Owner only, Guild only)."""
+    try:
+        await bot.db.add_user(ctx.author.id, wallet_address)
+        
+        # Sync roles immediately
+        await update_roles_for_user(ctx.author, wallet_address)
+        
+        # Silent confirmation
+        await ctx.message.add_reaction("✅")
+        
+    except Exception as e:
+        await ctx.send(f"Error: {e}")
+        logger.error(f"Test command error: {e}")
 
 # --- User Commands ---
 
@@ -131,18 +148,6 @@ async def handle_connect_logic(interaction: discord.Interaction, bot: 'NFTVerifi
     else:
         await interaction.response.send_message(msg, view=view, ephemeral=True)
 
-# --- Interactive Views ---
-
-class DisconnectView(discord.ui.View):
-    def __init__(self, bot: 'NFTVerificationBot'):
-        super().__init__(timeout=None)
-        self.bot = bot
-
-    @discord.ui.button(label="Disconnect Wallet", style=discord.ButtonStyle.danger)
-    async def disconnect_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.bot.db.remove_user(interaction.user.id)
-        await interaction.response.edit_message(content="Wallet disconnected. Roles will be removed on next sync.", view=None)
-
 # --- User Commands ---
 
 class VerifyModal(discord.ui.Modal, title="Verify Transaction"):
@@ -197,11 +202,13 @@ async def connect_wallet(interaction: discord.Interaction, wallet_address: str):
 
 @bot.tree.command(name="my_wallet", description="Check your linked Solana wallet address")
 async def my_wallet(interaction: discord.Interaction):
-    # This is now identical to /status but kept for intuitive naming
     user = await bot.db.get_user(interaction.user.id)
     if user:
-        view = DisconnectView(bot)
-        await interaction.response.send_message(f"Your linked wallet: `{user[1]}`", view=view, ephemeral=True)
+        await interaction.response.send_message(
+            f"Your linked wallet: `{user[1]}`\n"
+            "*To update your wallet, use the `/connect_wallet` command.*",
+            ephemeral=True
+        )
     else:
         await interaction.response.send_message("You don't have a wallet linked. Please use the `/connect_wallet <address>` command to link your wallet.", ephemeral=True)
 
@@ -216,12 +223,32 @@ async def add_collection(interaction: discord.Interaction, address: str, name: s
 @bot.tree.command(name="set_tier", description="Admin: Add a role tier for a collection")
 @app_commands.checks.has_permissions(administrator=True)
 async def set_tier(interaction: discord.Interaction, collection: str, min_nfts: int, role: discord.Role):
+    coll_data = await bot.db.get_collection(collection)
+    coll_name = coll_data[1] if coll_data else "Unknown"
+    
     await bot.db.add_tier(collection, min_nfts, role.id)
-    await interaction.response.send_message(f"Tier added for `{collection}`: {min_nfts}+ NFTs -> {role.name}", ephemeral=True)
+    
+    await interaction.response.send_message(
+        f"Tier added for **{coll_name}** (`{collection}`)\n"
+        f"> {role.mention} for {min_nfts} NFTs",
+        ephemeral=True
+    )
+
+@set_tier.autocomplete('collection')
+async def collection_autocomplete(
+    interaction: discord.Interaction,
+    current: str,
+) -> list[app_commands.Choice[str]]:
+    collections = await bot.db.get_all_collections()
+    return [
+        app_commands.Choice(name=name, value=addr)
+        for addr, name in collections
+        if current.lower() in name.lower() or current.lower() in addr.lower()
+    ][:25]
 
 # --- Helpers ---
 
-async def update_roles_for_user(member: discord.Member, wallet_address: str):
+async def update_roles_for_user(member: discord.Member, wallet_address: Optional[str]):
     roles_to_add_ids, roles_to_remove_ids = await bot.role_engine.calculate_roles(wallet_address)
     
     current_role_ids = {r.id for r in member.roles}

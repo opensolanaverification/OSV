@@ -69,7 +69,7 @@ An open-source, fully async Discord bot that verifies Solana NFT ownership and a
 ### Syncing Commands
 Slash commands (the ones starting with `/`) do not sync automatically on startup to improve performance and avoid duplicates. Admins must manually sync them when changes are made:
 
-- **Command**: `!sync`
+- **Command**: `!sync` (DM the bot)
 - **Permissions**: Required **Bot Owner** permissions.
 - **Sync Speed**: If `GUILD_ID` is set in `.env`, the sync is **instant**. Global sync (no `GUILD_ID`) can take up to 1 hour to propagate.
 

@@ -1,6 +1,6 @@
 import logging
 import asyncio
-from typing import List, Set, Tuple
+from typing import List, Set, Tuple, Optional
 from .db import Database
 from .helius_client import HeliusClient
 
@@ -11,7 +11,7 @@ class RoleEngine:
         self.db = db
         self.helius = helius
 
-    async def calculate_roles(self, wallet_address: str) -> Tuple[Set[int], Set[int]]:
+    async def calculate_roles(self, wallet_address: Optional[str]) -> Tuple[Set[int], Set[int]]:
         """
         Calculates which roles should be added and removed for a specific wallet.
         Returns: (roles_to_add, roles_to_remove)
@@ -22,11 +22,10 @@ class RoleEngine:
             return set(), set()
         
         # 2. Fetch all assets for the user
-        # Optimization: We could fetch by group if we only have 1 collection, 
-        # but with multiple collections, `getAssetsByOwner` is better, assuming < X total NFTs.
-        # If user has > 10k NFTs this might be slow, but it's the standard way.
-        
-        assets = await self.helius.get_all_assets_by_owner(wallet_address)
+        if wallet_address:
+            assets = await self.helius.get_all_assets_by_owner(wallet_address)
+        else:
+            assets = []
         
         # 3. Group assets by collection
         holdings = {} # collection_address -> count
@@ -63,17 +62,5 @@ class RoleEngine:
                 
         # 5. Roles to remove = All tracked roles - roles to keep
         roles_to_remove = all_tracked_roles - roles_to_keep
-        
-        # Filter roles_to_add: if they already have it (discord side), we can't know here easily 
-        # without the member object. The caller handles the actual API calls.
-        # But here we just return what they *should* have.
-        # Optimization: Return only positive assertions. 
-        # However, we need to know what to REMOVE.
-        # Logic: 
-        # - Add: Roles they qualify for.
-        # - Remove: Roles managed by the bot that they NO LONGER qualify for.
-        
-        # Note: roles_to_add currently contains "Roles they qualify for".
-        # If they already have it, adding it again is a no-op usually.
         
         return roles_to_add, roles_to_remove
