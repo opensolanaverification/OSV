@@ -26,12 +26,18 @@ An open-source, fully async Discord bot that verifies Solana NFT ownership and a
     cd <your-repo-dir>
     ```
 
-2.  **Install Dependencies**:
+2.  **Set up a virtual environment** (recommended):
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    ```
+
+3.  **Install Dependencies**:
     ```bash
     pip install -r requirements.txt
     ```
 
-3.  **Configuration**:
+4.  **Configuration**:
     Create a `.env` file in the root directory:
     ```env
     DISCORD_TOKEN=your_discord_bot_token
