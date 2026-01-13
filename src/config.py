@@ -8,8 +8,13 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 GUILD_ID = int(os.getenv("GUILD_ID", 0))
 
 # Helius Configuration
-HELIUS_API_KEY = os.getenv("HELIUS_API_KEY")
-HELIUS_RPC_URL = f"https://mainnet.helius-rpc.com/?api-key={HELIUS_API_KEY}"
+HELIUS_RPC_URL = os.getenv("HELIUS_RPC_URL")
+if HELIUS_RPC_URL:
+    from urllib.parse import urlparse, parse_qs
+    parsed_url = urlparse(HELIUS_RPC_URL)
+    HELIUS_API_KEY = parse_qs(parsed_url.query).get("api-key", [None])[0]
+else:
+    HELIUS_API_KEY = None
 
 # Solana Configuration
 SOLANA_RPC_URL = os.getenv("SOLANA_RPC_URL", HELIUS_RPC_URL)

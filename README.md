@@ -41,7 +41,7 @@ An open-source, fully async Discord bot that verifies Solana NFT ownership and a
     Create a `.env` file in the root directory:
     ```env
     DISCORD_TOKEN=your_discord_bot_token
-    HELIUS_API_KEY=your_helius_api_key
+    HELIUS_RPC_URL=https://mainnet.helius-rpc.com/?api-key=your_api_key
     
     # Optional Configuration
     # DB_PATH=bot_database.db
